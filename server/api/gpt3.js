@@ -1,58 +1,53 @@
+export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig();
+  let messages = await readBody(event);
+  let prompt = [{
+    role: "system", 
+    content: `You are a Virtual Assistant. 
+    If the course is not found, please ask them to subscribe to our newsletter.
+    Answer all the questions in your capacity.
+    `
+  }, ...messages]
+ 
 
 
-export default defineEventHandler(async(event)=>{
-    const config = useRuntimeConfig();
-    
-    let prompt =
-    'The following is a conversation with an AI assistant';
+ 
+  // console.log("Received messages:", messages);
 
-    let messages = [
-        {
-            actor:"Human",
-            message:"How are you",
-        },
-        {
-            actor:"AI",
-           message:"Hi,How can I help you today?"
-
-        },
-
-    ];
+ 
+  // let conversation = "";
+  // for (const message of messages) {
+  //   conversation += `${message.role}:${message.content}\n`;
+  // }
+  
+  //   prompt += conversation + "AI:";
+  //   console.log(prompt);
 
 
-    const prevMessages = await readBody(event);
-    console.log("Received messages:", messages);
-    messages = messages.concat(prevMessages);
-    prompt += 
-    messages
-    .map((message)=>`${message.actor}:${message.message}`)
-    .join("\n") + "\nAI:";
-    
-    const req = await fetch("https://api.openai.com/v1/completions",{
-        method: "POST",
-        headers: {
-            "Content-Type":"application/json",
-            Authorization: `Bearer ${config.OPENAI_API_KEY}`,
+  const req = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-3.5-turbo",
+      messages: prompt,
+      max_tokens: 560, 
+      n: 1,
+      stop: null, 
+      temperature: 0.7,
+    }),
+  });
 
-        },
-        body: JSON.stringify({
-            model: "gpt-3.5-turbo-instruct",
-            prompt: prompt,
-            temperature: 0.7,
-            max_tokens: 256,
-            top_p: 1.0,
-            frequency_penalty:0.6,
-            stop:["Human:","AI:"],
-        }
-        ),
-    });
-    console.log("Fetch response:", req);
-    const res = await req.json();
-    console.log(res);
-    
-    const result = res.choices[0];
-    return{
-        message: result.text,
-        finish_reason: result.finish_reason,
-    };
+  console.log("Fetch response:", req);
+  const response = await req.json();
+   response = completion.data.choices[0].message
+  console.log(response);
+
+  // const result = response.choices[0];
+  return {
+    message: response,
+  }
+
 });

@@ -1,60 +1,55 @@
 <template>
+
   <div class="chat-container">
-    <div>
     <div class="message-container">
-      <div v-for="message in messages" :key="message.actor" class="message-item message-bubble" :class="{ 'user-message': message.actor === 'Human', 'ai-message': message.actor === 'AI' }">
-        {{ message.message }}
+      <div v-for="message in messages" :key="message.content" class="message-item message-bubble" :class="{ 'user-message': message.role === 'user', 'ai-message': message.role === 'AI' }">
+        {{ message.content }}
       </div>
     </div>
 
-    <form @submit.prevent="submitMessage">
+    <form>
       <input @keypress.enter.exact.prevent="submitMessage" class="chat-input" type="text" placeholder="Type your message..." v-model="message" />
       <button @click.prevent="submitMessage" type="submit" class="send-button">Send</button>
     </form>
   </div>
-  </div>
- 
-
-    
 </template>
 
 <script setup lang="ts">
 
-  const message = ref("");
-  const messages = ref([{
-    actor:'assistant',
-    message:'Hello,how can I help you?'
-  },
-  
-  ]);
-  
-const submitMessage = async()=>{
-  if(message.value=="") return;
 
-  messages.value.push({actor:'Human',message:message.value});
-  message.value="";
+const message = ref("");
+const messages = ref([
+  { role: 'assistant', content: 'Hello, how can I help you?' }]
+);
+
+const submitMessage = async () => {
+  if (message.value === "") return;
+
+  // messages.value.push({ role: 'user', content: message.value });
+  messages.value = [...messages.value, { role: "user", content: message.value }]
+  message.value = "";
 
   console.log("Sending messages:", messages.value);
-  
+
   const req = await fetch(`/api/gpt3`, {
-    body: JSON.stringify(messages.value.slice(1)),
-    method: 'post',
+    body: JSON.stringify({ messages: messages.value }),
+    method: 'POST',
   });
-  
-  if(req.status == 200){
+  console.log("Messages Array: "+messages);
+  if (req.status === 200) {
     const response = await req.json();
-    messages.value.push({actor:'AI',message:response.message});
-    message.value = '';
+    
+    // messages.value.push({ role: 'assistant', content: response.message });
+    messages.value = [...messages.value, response.message]
   }
-
- 
-
-
-
-
-}
+};
 
 </script>
+
+<style scoped>
+  /* Your existing styling remains the same */
+</style>
+
 
 <style scoped>
 html, body {
