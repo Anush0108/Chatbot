@@ -1,15 +1,30 @@
 <template>
-
   <div class="chat-container">
     <div class="message-container">
-      <div v-for="message in messages" :key="message.content" class="message-item message-bubble" :class="{ 'user-message': message.role === 'user', 'ai-message': message.role === 'AI' }">
+      <div
+        v-for="message in messages"
+        :key="message.content"
+        class="message-item message-bubble"
+        :class="{
+          'user-message': message.role === 'user',
+          'ai-message': message.role === 'assistant',
+        }"
+      >
         {{ message.content }}
       </div>
     </div>
 
     <form>
-      <input @keypress.enter.exact.prevent="submitMessage" class="chat-input" type="text" placeholder="Type your message..." v-model="message" />
-      <button @click.prevent="submitMessage" type="submit" class="send-button">Send</button>
+      <input
+        @keypress.enter.exact.prevent="submitMessage"
+        class="chat-input"
+        type="text"
+        placeholder="Type your message..."
+        v-model="message"
+      />
+      <button @click.prevent="submitMessage" type="submit" class="send-button">
+        Send
+      </button>
     </form>
   </div>
 </template>
@@ -19,56 +34,58 @@
 
 const message = ref("");
 const messages = ref([
-  { role: 'assistant', content: 'Hello, how can I help you?' }]
-);
+  { role: "assistant", content: "Hello, how can I help you?" },
+]);
 
 const submitMessage = async () => {
   if (message.value === "") return;
 
-  // messages.value.push({ role: 'user', content: message.value });
-  messages.value = [...messages.value, { role: "user", content: message.value }]
+  messages.value.push({ role: "user", content: message.value });
   message.value = "";
 
   console.log("Sending messages:", messages.value);
 
-  const req = await fetch(`/api/gpt3`, {
-    body: JSON.stringify({ messages: messages.value }),
-    method: 'POST',
+  const req = await fetch("/api/gpt3", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(messages.value),
   });
-  console.log("Messages Array: "+messages);
+
   if (req.status === 200) {
     const response = await req.json();
-    
-    // messages.value.push({ role: 'assistant', content: response.message });
-    messages.value = [...messages.value, response.message]
+    messages.value.push(response.message);
+  } else {
+    const errorResponse = await req.json();
+    console.error("Error response from API:", errorResponse);
+    messages.value.push({
+      role: "assistant",
+      content: `Error: ${errorResponse.message}`,
+    });
   }
 };
-
 </script>
 
 <style scoped>
-  /* Your existing styling remains the same */
-</style>
-
-
-<style scoped>
-html, body {
-  margin: 0; /* Remove default margin */
-  padding: 0; /* Remove default padding */
-  height: 100vh; /* Set height to 100% viewport height */
-  font-family: sans-serif; /* Choose your preferred font family */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  font-family: sans-serif;
 }
 
 .chat-container {
-  display:block;
+  display: flex;
   flex-direction: column;
-  height: 100%; /* Inherit full height from body */
+  height: 100%;
 }
 
 .message-container {
-  height: 400px; /* Adjust height as needed */
+  height: 400px;
   overflow-y: scroll;
-  padding: 10px; /* Add padding for better visual separation */
+  padding: 10px;
 }
 
 .message-item {
@@ -76,54 +93,54 @@ html, body {
   border-radius: 5px;
   margin-bottom: 5px;
 }
+
 .message-bubble {
   padding: 10px 15px;
-  border-radius: 10px; /* Adjust for desired roundness */
+  border-radius: 10px;
   margin-bottom: 5px;
-  background-color: #fff; /* Default white background */
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-  display: inline-block; /* Allow text wrapping */
-  position: relative;
+  background-color: #fff;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  display: inline-block;
 }
+
 .user-message {
   background-color: #f9f9f9;
   float: right;
-  clear: both; /* Clear float for next message */
+  clear: both;
 }
 
 .ai-message {
   background-color: #e0e0e0;
   float: left;
-  clear: both; /* Clear float for next message */
+  clear: both;
 }
 
 .send-button {
-  position: absolute; /* Position the button at the bottom */
-  right: 30px; /* Adjust right margin as needed */
-  bottom: 10px; /* Adjust bottom margin as needed */
+  position: absolute;
+  right: 30px;
+  bottom: 10px;
   padding: 10px 20px;
   font-size: 16px;
   border: none;
-  border-radius: 50px; /* Round corners */
+  border-radius: 50px;
   cursor: pointer;
-  background-color: #4caf50; /* Default color */
+  background-color: #4caf50;
   color: white;
-  transition: background-color 0.3s ease-in-out; /* Hover effect transition */
+  transition: background-color 0.3s ease-in-out;
 }
 
 .send-button:hover {
-  background-color: #45a049; /* Hover color */
+  background-color: #45a049;
 }
-.chat-input{
-  display: flex; /* Allow for optional icon placement */
-  align-items: center; /* Vertically center text within input */
-  width: 450px; /* Take up full width of container */
+
+.chat-input {
+  width: calc(100% - 20px);
   padding: 10px 20px;
   font-size: 16px;
   border: none;
-  outline: none; /* Remove default outline on focus */
+  outline: none;
   border-radius: 25px;
-  background-color: #f9f9f9; /* Light background color */
+  background-color: #f9f9f9;
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>
